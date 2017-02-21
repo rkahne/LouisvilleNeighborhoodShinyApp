@@ -2,7 +2,38 @@ library(shinydashboard)
 library(shiny)
 library(ggthemes)
 library(scales)
+library(extrafont)
+library(RColorBrewer)
 library(tidyverse) # MUST GO LAST!!!!
+
+rlk_palette<-brewer.pal(6, 'Dark2')
+
+rlk_theme<-function(base_family = "Open Sans", base_size = 12) {
+  theme_bw(base_family = base_family, base_size = base_size) +
+    theme(
+      plot.title = element_text(face = 'bold', hjust = 0, color=rlk_palette[3], size= 36),
+      text = element_text(colour = 'black'),
+      panel.background = element_blank(),
+      strip.background = element_blank(),
+      plot.background = element_rect('gainsboro'),
+      panel.border = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color=rlk_palette[1],size=rel(1.75)),
+      panel.grid.minor.y = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      legend.background = element_blank(),
+      legend.title = element_text(face='bold', color=rlk_palette[1]),
+      legend.position = 'bottom',
+      legend.direction = 'horizontal',
+      legend.key = element_blank(),
+      legend.text= element_text(face='bold', color=rlk_palette[1]),
+      strip.text = element_blank(),
+      axis.text.y = element_text(color=rlk_palette[2]),
+      axis.text.x = element_text(color=rlk_palette[2]),
+      axis.title = element_text(face = 'bold', color=rlk_palette[2]),
+      axis.ticks = element_blank()
+    )
+}
 
 neighborhood_data <- read_csv('Nate_Data.csv')
 
@@ -27,20 +58,23 @@ make_scatter<-function(x, y){
   neighborhood_data$x_axis <- unlist(neighborhood_data[x])
   neighborhood_data$y_axis <- unlist(neighborhood_data[y])
   ggplot(neighborhood_data, aes(x=x_axis, y=y_axis)) + 
-    geom_smooth(method = 'lm', se = F) +
+    geom_smooth(method = 'lm', se = F, color = rlk_palette[4]) +
     geom_label(aes(label = sc_abbr))+
     labs(x = names(lookup_columns)[which(lookup_columns == x)], 
          y = names(lookup_columns)[which(lookup_columns == y)], 
-         title = paste0(names(lookup_columns)[which(lookup_columns == x)],' ~ ', names(lookup_columns)[which(lookup_columns == y)]))
+         title = paste0(names(lookup_columns)[which(lookup_columns == x)],' ~ ', names(lookup_columns)[which(lookup_columns == y)]))+
+    rlk_theme() +
+    theme(axis.text.x = element_text(angle = 90))
 }
 
 make_bar<-function(y){
   neighborhood_data$y_axis <- unlist(neighborhood_data[y])
   data_r <- mutate(neighborhood_data, abbr = factor(abbr, levels = abbr[order(y_axis)]))
-  ggplot(data_r, aes(x=abbr, y=y_axis)) + 
-    geom_bar(stat = 'identity') + 
-    theme(axis.text.x = element_text(angle = 90))+
-    labs(x='Neighborhood', y = y, title=paste0('Neighborhoods by ',names(lookup_columns)[which(lookup_columns == y)]))
+  ggplot(data_r, aes(x=abbr, y=y_axis, label = label)) + 
+    geom_bar(stat = 'identity', color = rlk_palette[6],fill = rlk_palette[5]) +
+    labs(x='Neighborhood', y = names(lookup_columns)[which(lookup_columns == y)], title=paste0('Neighborhoods by ',names(lookup_columns)[which(lookup_columns == y)]))+
+    rlk_theme()+
+    theme(axis.text.x = element_text(angle = 90))
 }
 
 ui<-dashboardPage(
@@ -75,3 +109,5 @@ server<-function(input,output){
 }
 
 shinyApp(ui, server)
+
+
